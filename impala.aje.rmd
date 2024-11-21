@@ -1,0 +1,168 @@
+---
+title: "Impala.AJE"
+author: "Matt Wuensch"
+date: "11/20/2024"
+output: html_document
+---
+# Chunk 1: 2017 analyses
+```{r}
+# 2017 data summary and analysis
+library(dplyr)
+
+# Bring in datatframe
+imp.dat.17 <- read.csv("C:/Users/mwuen/Documents/R/Misc/Impala/impala.data.17.csv")
+
+# Convert to factor
+imp.dat.17$location <- as.factor(imp.dat.17$location)
+imp.dat.17$impala.type <- as.factor(imp.dat.17$impala.type)
+imp.dat.17$herd.type <- as.factor(imp.dat.17$herd.type)
+str(imp.dat.17)
+
+# Get summary of each behavior type for each location, herd type, and impala type for each behavior
+imp.dat.17.sum <- imp.dat.17 %>%
+  group_by(location,herd.type,impala.type) %>%
+  summarise_if(is.integer, sum) %>%
+  ungroup()
+
+
+# 2017 Chisq
+chisq.test(imp.dat.17.sum[,c(4:6)], correct = FALSE)
+  # x2 stat = 41.899, df = 4, p = 1.75e-08
+
+## Pairwise comparisons
+### Female - Juvenile
+chisq.test(imp.dat.17.sum[c(1,2),c(4:6)], correct = FALSE)
+  # x2 stat = 4.5592, df = 2, p = 0.1023
+
+### Female - Male
+chisq.test(imp.dat.17.sum[c(1,3),c(4:6)], correct = FALSE)
+  # x2 stat = 35.061, df = 2, p = 2.436e-08
+
+### Male - Juvenile
+chisq.test(imp.dat.17.sum[c(2,3),c(4:6)], correct = FALSE)
+  # x2 stat = 28.855, df = 2, p = 5.424e-07
+```
+# Chunk 2: 2023 analyses
+```{r}
+library(dplyr)
+
+# Bring in datatframe
+imp.dat.23 <- read.csv("C:/Users/mwuen/Documents/R/Misc/Impala/impala.data.23.csv")
+
+# Convert to factor
+imp.dat.23$location <- as.factor(imp.dat.23$location)
+imp.dat.23$impala.type <- as.factor(imp.dat.23$impala.type)
+imp.dat.23$herd.type <- as.factor(imp.dat.23$herd.type)
+str(imp.dat.23)
+
+# Get summary of each behavior type for each location, herd type, and impala type for each behavior
+imp.dat.23.sum <- imp.dat.23 %>%
+  group_by(location,herd.type,impala.type) %>%
+  summarise_if(is.integer, sum) %>%
+  ungroup()
+
+# remove juveniles in Kruger, students only gathered data from 2 individuals over short timespan. Also remove f/j from bachelor herds
+imp.dat.23.sum<- imp.dat.23.sum[-c(1,2,5,7,8),]
+
+
+# REMINDER: Q1 is how does impala behavior vary within territorial herds
+#               1 chisq in each WRF (F-J, F-M, M-J) and KNP (F-M)            
+#           Q2 is how does behavior vary among territorial and bachelor males
+#               1 chisq in each WRF and KNP (TERR-BACH)  
+#           Q3 is how does behavior vary between KNP and WRF
+#               2 chisqs in total. 1 for territorial herd, 1 for bach herd. if I don't like this
+
+
+
+##### Q1 Impala behavior in territorial herds #####
+
+# Filter for territorial herds
+imp.23.ter.sum <- imp.dat.23.sum %>%
+  filter(herd.type == "territorial")
+
+# Split into each location
+wits.23.ter.dat <- imp.23.ter.sum %>%
+  filter(location == "wits.facility")
+
+kru.23.ter.dat <- imp.23.ter.sum %>%
+  filter(location == "kruger")
+
+
+
+# 2023 Wits code, Q1
+chisq.test(wits.23.ter.dat[,c(4:6)], correct = FALSE)
+  # x2 stat = 169.47, df = 4, p < 2.2e-16
+
+## Pairwise comparisons
+### Female - Juvenile
+chisq.test(wits.23.ter.dat[c(1,2),c(4:6)], correct = FALSE)
+  # x2 stat = 99.332, df = 2, p < 2.2e-16
+
+### Female - Male
+chisq.test(wits.23.ter.dat[c(1,3),c(4:6)], correct = FALSE)
+  # x2 stat = 91.427, df = 2, p < 2.2e-16
+
+### Male - Juvenile
+chisq.test(wits.23.ter.dat[c(2,3),c(4:6)], correct = FALSE)
+  # x2 stat = 20.369, df = 2, p < 2.2e-16
+
+
+# 2023 kruger code (F-M only), Q1
+chisq.test(kru.23.ter.dat[,c(4:6)], correct = FALSE)
+  # x2 stat = 14.196, df = 2, p = 0.0008269
+
+
+
+##### Q2 Impala behavior between males in bachelor and territorial herds #####
+
+# Filter for males
+imp.23.male.sum <- imp.dat.23.sum %>%
+  filter(impala.type == "male")
+
+
+# 2023 Bachelor - territorial code, Q2
+chisq.test(imp.23.male.sum[,c(4:6)], correct = FALSE)
+# x2 stat = 62.189, df = 6, p = 1.615e-11
+
+## Pairwise comparisons
+### WRF bachelor - territorial
+chisq.test(imp.23.male.sum[c(3,4),c(4:6)], correct = FALSE)
+# x2 stat = 48.499, df = 2, p = 2.941e-11
+
+## KNP bachelor - territorial
+chisq.test(imp.23.male.sum[c(1,2),c(4:6)], correct = FALSE)
+# x2 stat = 7.8455, df = 2, p = 0.01979
+
+
+
+##### Q3 Impala behavior between kruger NP and WRF #####
+
+# Filter for bachelor herd
+imp.23.bach.sum <- imp.dat.23.sum %>%
+  filter(herd.type == "bachelor")
+
+# Remove juveniles from imp.ter.sum since they're not in kruger
+imp.23.ter.sum.2 <- imp.23.ter.sum[-4,]
+
+
+
+# 2023 Territorial code, Q3
+chisq.test(imp.23.ter.sum.2[,c(4:6)], correct = FALSE)
+  # x2 stat = 156.39, df = 6, p < 2.2e-16
+
+## Pairwise comparisons
+### KNP female - WRF female
+chisq.test(imp.23.ter.sum.2[c(1,3),c(4:6)], correct = FALSE)
+  # x2 stat = 103.12, df = 2, p < 2.2e-16
+
+### KNP male - WRF male
+chisq.test(imp.23.ter.sum.2[c(2,4),c(4:6)], correct = FALSE)
+  # x2 stat = 23.2, df = 2, p = 9.165e-06
+
+
+
+# 2023 Bachelor code, Q3
+chisq.test(imp.23.male.sum[c(1,3),c(4:6)], correct = FALSE)
+  # x2 stat = 8.1226, df = 2, p = 0.01723
+```
+# Chunk 3: Figures

@@ -1,0 +1,338 @@
+---
+title: "impala.summary.23"
+author: "Matt Wuensch"
+date: "1/24/2024"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+impala.dat <- read.csv("C:/Users/mwuen/Documents/R/Misc/impala.summary.23.csv")
+
+impala.summary <- impala.dat %>%
+  group_by(Site, Herd.type, Impala.type) %>%
+  summarise(Foraging = sum(Foraging), Vigilant = sum(Vigilant), Tending.young = sum(Tending.young), Social = sum(Social), o.o.f = sum(Out.of.frame), Grooming = sum(Grooming), Other = sum (Other))
+
+impala.summary <- as.data.frame(impala.summary)
+
+write.csv(impala.summary, "C:/Users/mwuen/Documents/R/Misc/impala.summary.23.chisq.csv", row.names = F)
+
+
+
+#### Build Ellie figures
+# Making figure 1, for territorial herds, filter df to herd.type
+impala.territorial <- impala.summary %>%
+  dplyr::filter(Herd.type == "territorial")
+
+impala.territorial$all.other <- impala.territorial$Tending.young + impala.territorial$Social+impala.territorial$Grooming + impala.territorial$Other
+
+# Remove unused columns now
+impala.territorial <- impala.territorial %>%
+  dplyr::select(-Tending.young, -Social, -o.o.f, -Grooming, -Other)
+
+# Rearrange the df for plotting
+impala.territorial <- impala.territorial %>%
+  pivot_longer(cols = c("Foraging", "Vigilant", "all.other"),
+               names_to = "behavior",
+               values_to = "counts")
+
+# If want to do this as a proportion, need to group and make a group.sum column then divide counts by group.sum
+impala.territorial <- impala.territorial %>%
+  group_by(Site, Impala.type) %>%
+  mutate(sum.counts = sum(counts))
+
+# Make a prop column
+impala.territorial$behavior.prop <- impala.territorial$counts/impala.territorial$sum.counts
+
+#Have to subset by plots, then patchwork them together
+impala.territorial.wits <- impala.territorial %>%
+  dplyr::filter(Site == "wits")
+
+impala.territorial.kruger <- impala.territorial %>%
+  dplyr::filter(Site == "kruger")
+
+# Theme that I like
+theme <- theme_classic()+
+  theme(axis.title = element_text(size = 12), text = element_text(size = 11), axis.text=element_text(size=12, color = "black"), legend.box.background = element_rect(colour = "black"))
+
+# Color palette to choose from(#882314, #C0532B, #CF932C, #674D52, #8C86A0, #724439, #D5AB85) from bryce canyon vignette
+
+
+ggplot(data = impala.territorial.wits, aes(y = behavior.prop, x= Impala.type, group = behavior, fill = behavior)) + 
+  geom_bar(position = "dodge", stat = "identity", alpha = .85) + 
+  theme +
+  scale_fill_manual(values = c("#8C86A0", "#D5AB85", "#C0532B"))
+
+ggplot(data = impala.territorial.kruger, aes(y = behavior.prop, x= Impala.type, group = behavior, fill = behavior)) + 
+  geom_bar(position = "dodge", stat = "identity" , alpha = .85) +
+  theme +
+  scale_fill_manual(values = c("#8C86A0", "#D5AB85", "#C0532B"))
+```
+# Checking ellie's chi square results, and looking at corrections for multiple comparisons
+
+```{r}
+library(chisq.posthoc.test)
+NT <- read.csv("C:/Users/mwuen/Documents/R/Misc/chisq.nic.csv")
+NT
+
+chisq.test(NT[,c(2:6)], correct = FALSE)
+
+
+M <- as.table(rbind(c(762, 327, 468), c(484, 239, 477)))
+dimnames(M) <- list(gender = c("F", "M"),
+party = c("Democrat","Independent", "Republican"))
+
+# Pass data matrix to chisq.posthoc.test function
+chisq.test(M)
+chisq.posthoc.test(M,  method = "bonferroni")
+chisq.test(NT[,c(2:6)])
+chisq.posthoc.test(NT[,c(2:6)],  method = "bonferroni")
+
+EL <- read.csv("C:/Users/mwuen/Documents/R/Misc/chisq.el.csv")
+
+chisq.test(EL[,c(2:3)], correct = FALSE)
+```
+#Chunk 1, Q1: How does impala behavior vary within territorial herds?
+# Chunk 2 will be examining how bachelor males differ from territorial males
+# Chunk 3 will compare high to no predator density.
+```{r}
+library(dplyr)
+
+# Bring in datatframe
+imp.dat <- read.csv("C:/Users/mwuen/Documents/R/Misc/Ellie.impala.data.csv")
+
+# Convert to factor
+imp.dat$location <- as.factor(imp.dat$location)
+imp.dat$impala.type <- as.factor(imp.dat$impala.type)
+imp.dat$herd.type <- as.factor(imp.dat$herd.type)
+str(imp.dat)
+
+# Get summary of each behavior type for each location, herd type, and impala type for each behavior
+imp.dat.sum <- imp.dat %>%
+  group_by(location,herd.type,impala.type) %>%
+  summarise_if(is.integer, sum) %>%
+  ungroup()
+
+# Filter for territorial herds
+imp.ter.sum <- imp.dat.sum %>%
+  filter(herd.type == "territorial")
+
+# Group the other behaviors into other
+imp.ter.sum$all.other <- imp.ter.sum$tending.young. + imp.ter.sum$social + imp.ter.sum$grooming + imp.ter.sum$other
+
+# Filter out the columns you don't need
+imp.ter.sum <- imp.ter.sum %>%
+  select(-herd.type, -tending.young., -social, - out.of.sight, -grooming, -other)
+
+# Split into each location
+wits.ter.dat <- imp.ter.sum %>%
+  filter(location == "wits.facility")
+
+kru.ter.dat <- imp.ter.sum %>%
+  filter(location == "kruger")
+
+kru.ter.dat <- kru.ter.dat %>%
+  filter(!impala.type == "juvenile")
+
+
+
+# Ellie Wits code
+chisq.test(wits.ter.dat[,c(3:5)], correct = FALSE)
+  # x2 stat = 169.47, df = 4, p < 2.2e-16
+
+## Pairwise comparisons
+### Female - Juvenile
+chisq.test(wits.ter.dat[c(1,2),c(3:5)], correct = FALSE)
+  # x2 stat = 99.332, df = 2, p < 2.2e-16
+
+### Female - Male
+chisq.test(wits.ter.dat[c(1,3),c(3:5)], correct = FALSE)
+  # x2 stat = 91.427, df = 2, p < 2.2e-16
+
+### Male - Juvenile
+chisq.test(wits.ter.dat[c(2,3),c(3:5)], correct = FALSE)
+  # x2 stat = 20.369, df = 2, p < 2.2e-16
+
+
+# Ellie kruger code
+chisq.test(kru.ter.dat[,c(3:5)], correct = FALSE)
+
+
+
+
+
+# Filter for males
+imp.male.sum <- imp.dat.sum %>%
+  filter(impala.type == "male")
+
+# Group the non-foraging and vigilance into other
+imp.male.sum$all.other <- imp.male.sum$tending.young. + imp.male.sum$social + imp.male.sum$grooming + imp.male.sum$other
+
+# Filter out the columns you don't want
+imp.male.sum <- imp.male.sum %>%
+  select(-tending.young., -social, - out.of.sight, -grooming, -other)
+
+# Split into each location
+wits.male.dat <- imp.male.sum %>%
+  filter(location == "wits.facility")
+
+kru.male.dat <- imp.male.sum %>%
+  filter(location == "kruger")
+
+
+# Bachelor to territorial males
+## Kruger
+chisq.test(kru.male.dat[,c(4:6)], correct = FALSE)
+
+
+chisq.test(wits.male.dat[,c(4:6)], correct = FALSE)
+
+
+
+# Make comparisons between Kruger and wits
+
+#Territorial females in kruger vs wits
+chisq.test(imp.ter.sum[c(1,4),c(3:5)], correct = FALSE)
+
+chisq.test(imp.ter.sum[c(3,6),c(3:5)], correct = FALSE)
+
+chisq.test(imp.male.sum[c(1,3),c(4:6)], correct = FALSE)
+
+
+```
+# Making figures
+
+```{r}
+# Make 1 Kruger and 1 Wits that are MFJ vigilance/foraging/other for each age/sex
+# Make 1 comparing bachelor males in both. 
+library(ggplot2)
+library(tidyr)
+
+##### Territorial herds
+# Need to convert everything to long format
+imp.ter.long <- imp.ter.sum %>%
+  pivot_longer(
+    cols = c("foraging", "vigilant", "all.other"),
+    names_to = "Behavior",
+    values_to = "Count"
+  )
+
+# Need to get total observations for each group to convert counts to proportions
+imp.ter.long <- imp.ter.long %>%
+   group_by(location, impala.type) %>%
+  mutate(sum = sum(Count))
+
+# Making a proportion column
+imp.ter.long$prop <- imp.ter.long$Count/imp.ter.long$sum
+
+# Setting theme for plots that I like
+theme <- theme_classic()+
+  theme(axis.title = element_text(size = 8), text = element_text(size = 8), axis.text=element_text(size=8, color = "black"), legend.box.background = element_rect(colour = "black"), axis.title.x = element_blank())
+
+# Making plot for territorial herds
+Figure.1 <- ggplot(data = imp.ter.long, aes(y = prop, x= interaction(impala.type, location), fill = Behavior)) + 
+  geom_bar(position = "dodge", stat = "identity", alpha = .85) + 
+  theme +
+  scale_fill_manual(values = c("#8C86A0", "#D5AB85", "#C0532B"))+
+  labs(y = "Proportion of time") +
+  scale_x_discrete(labels=c("Female.KNP", "Juvenile.KNP", "Male.KNP", "Female.WRF", "Juvenile.WRF", "Male.WRF"))
+
+
+
+##### Bachelor herds
+imp.male.long <- imp.male.sum %>%
+  pivot_longer(
+    cols = c("foraging", "vigilant", "all.other"),
+    names_to = "Behavior",
+    values_to = "Count"
+  )
+
+imp.male.long <- imp.male.long %>%
+   group_by(location, herd.type) %>%
+  mutate(sum = sum(Count))
+
+# Making a proportion column
+imp.male.long$prop <- imp.male.long$Count/imp.male.long$sum
+
+# Making figure for males in territorial and bachelor herds
+Figure.2 <- ggplot(data = imp.male.long, aes(y = prop, x= interaction(herd.type, location), fill = Behavior)) +
+  geom_bar(position = "dodge", stat = "identity", alpha = .85) + 
+  theme +
+  scale_fill_manual(values = c("#8C86A0", "#D5AB85", "#C0532B"))+
+  labs(y = "Proportion of time") + 
+  scale_x_discrete(labels = c("Bachelor.KNP", "Territorial.KNP", "Bachelor.WRF", "Territorial.WRF"))
+
+ggsave("C:/Users/mwuen//Documents/R/Misc/Figure.1.png", Figure.1, units = "in", dpi = 300, width = 6, height = 3.5)
+
+ggsave("C:/Users/mwuen//Documents/R/Misc/Figure.2.png", Figure.2, units = "in", dpi = 300, width = 6, height = 3.5)
+
+```
+# Getting summary data for the 2019 class
+```{r}
+library(dplyr)
+
+# Bring in datatframe
+imp.dat.19 <- read.csv("C:/Users/mwuen/Documents/R/Misc/2019_data.csv")
+
+imp.sum.19 <- imp.dat.19 %>%
+  group_by(Site, Herd.Type) %>%
+  summarise(Vigilant = sum(Vigilant), Other = sum(Not.vigIlant))
+
+write.csv(imp.sum.19, "C:/Users/mwuen/Documents/R/Misc/impala.summary.19.csv", row.names = F)
+```
+# Chunk cleaning dataframes for manuscript so that they all match relatively
+```{r}
+library(dplyr)
+
+##### 2023
+# Bring in datatframe
+imp.dat.23 <- read.csv("C:/Users/mwuen/Documents/R/Misc/Ellie.impala.data.csv")
+
+# Convert to factor
+imp.dat.23$location <- as.factor(imp.dat.23$location)
+imp.dat.23$impala.type <- as.factor(imp.dat.23$impala.type)
+imp.dat.23$herd.type <- as.factor(imp.dat.23$herd.type)
+str(imp.dat.23)
+
+# Group the other behaviors into other
+imp.dat.23$all.other <- imp.dat.23$tending.young. + imp.dat.23$social + imp.dat.23$grooming + imp.dat.23$other
+
+# Filter out the columns you don't need
+imp.dat.23 <- imp.dat.23 %>%
+  select(-tending.young., -social, - out.of.sight, -grooming, -other)
+
+#write.csv(imp.dat.23, "C:/Users/mwuen/Documents/R/Misc/Impala/impala.data.23.csv", row.names = F)
+
+
+
+##### 2017
+imp.dat.19 <- read.csv("C:/Users/mwuen/Documents/R/Misc/2019_data.csv")
+
+# Getting it to match the 2023 df
+imp.sum.19 <- imp.dat.19 %>%
+  group_by(Site, Herd.Type, Trial) %>%
+  summarise(Vigilant = sum(Vigilant), Other = sum(Not.vigIlant))
+
+
+# Get summary of each behavior type for each location, herd type, and impala type for each behavior
+imp.dat.sum <- imp.dat %>%
+  group_by(location,herd.type,impala.type) %>%
+  summarise_if(is.integer, sum) %>%
+  ungroup()
+
+# Filter for territorial herds
+imp.ter.sum <- imp.dat.sum %>%
+  filter(herd.type == "territorial")
+
+# Group the other behaviors into other
+imp.ter.sum$all.other <- imp.ter.sum$tending.young. + imp.ter.sum$social + imp.ter.sum$grooming + imp.ter.sum$other
+
+# Filter out the columns you don't need
+imp.ter.sum <- imp.ter.sum %>%
+  select(-herd.type, -tending.young., -social, - out.of.sight, -grooming, -other)
+```
+```

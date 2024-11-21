@@ -1,0 +1,27 @@
+{
+    "id": "D9A6E1DA",
+    "path": "~/R/Misc/Impala/impala.aje.rmd",
+    "project_path": "impala.aje.rmd",
+    "type": "r_markdown",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1732128002023.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "160,0",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1732138426,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1732138426669,
+    "read_only": false,
+    "read_only_alternatives": []
+}
