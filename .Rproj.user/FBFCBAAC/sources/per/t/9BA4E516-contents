@@ -3,6 +3,8 @@ title: "Impala.AJE"
 author: "Matt Wuensch"
 date: "11/20/2024"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 # Chunk 1: 2017 analyses
 ```{r}
@@ -166,3 +168,76 @@ chisq.test(imp.23.male.sum[c(1,3),c(4:6)], correct = FALSE)
   # x2 stat = 8.1226, df = 2, p = 0.01723
 ```
 # Chunk 3: Figures
+```{r}
+library(ggplot2)
+library(tidyr)
+
+# Notes for Taylor: I haven't made a 2017 figure yet (we only have data from WRF in territorial herds there). It'll be easy to adapt the 2023 code. I'm also not remotely married to any of these color palettes so change whatever the hell you want. I also did colors by behavior type, if you think it makes more sense to color impala type, herd type, etc differently, that works too! I also don't think I have the fonts set to print nicely at a given size since I made these REALLY fast for Ellie. Note to self, check orders of x axes.
+
+##### 2017 Figures (Need done following code for 2023) #####
+
+
+
+##### 2023 Figures #####
+
+## Territorial herds
+# Need to convert everything to long format
+imp.23.ter.long <- imp.23.ter.sum %>%
+  pivot_longer(
+    cols = c("foraging", "vigilant", "all.other"),
+    names_to = "Behavior",
+    values_to = "Count"
+  )
+
+# Need to get total observations for each group to convert counts to proportions
+imp.23.ter.long <- imp.23.ter.long %>%
+   group_by(location, impala.type) %>%
+  mutate(sum = sum(Count))
+
+# Making a proportion column
+imp.23.ter.long$prop <- imp.23.ter.long$Count/imp.23.ter.long$sum
+
+# Setting theme for plots that I like
+theme <- theme_classic()+
+  theme(axis.title = element_text(size = 8), text = element_text(size = 8), axis.text=element_text(size=8, color = "black"), legend.box.background = element_rect(colour = "black"), axis.title.x = element_blank())
+
+# Making plot for territorial herds
+Figure.1 <- ggplot(data = imp.23.ter.long, aes(y = prop, x= interaction(impala.type, location), fill = Behavior)) + 
+  geom_bar(position = "dodge", stat = "identity", alpha = .85) + 
+  theme +
+  scale_fill_manual(values = c("#8C86A0", "#D5AB85", "#C0532B"))+
+  labs(y = "Proportion of time") +
+  scale_x_discrete(labels=c("Female.KNP", "Male.KNP", "Female.WRF", "Juvenile.WRF", "Male.WRF"))
+
+
+
+## Bachelor herds
+# Need to convert everything to long format
+imp.23.male.long <- imp.23.male.sum %>%
+  pivot_longer(
+    cols = c("foraging", "vigilant", "all.other"),
+    names_to = "Behavior",
+    values_to = "Count"
+  )
+
+# Need to get total observations for each group to convert counts to proportions
+imp.23.male.long <- imp.23.male.long %>%
+   group_by(location, herd.type) %>%
+  mutate(sum = sum(Count))
+
+# Making a proportion column
+imp.23.male.long$prop <- imp.23.male.long$Count/imp.23.male.long$sum
+
+# Making figure for males in territorial and bachelor herds
+Figure.2 <- ggplot(data = imp.23.male.long, aes(y = prop, x= interaction(herd.type, location), fill = Behavior)) +
+  geom_bar(position = "dodge", stat = "identity", alpha = .85) + 
+  theme +
+  scale_fill_manual(values = c("#8C86A0", "#D5AB85", "#C0532B"))+
+  labs(y = "Proportion of time") + 
+  scale_x_discrete(labels = c("Bachelor.KNP", "Territorial.KNP", "Bachelor.WRF", "Territorial.WRF"))
+
+#ggsave("C:/Users/mwuen//Documents/R/Misc/Figure.1.png", Figure.1, units = "in", dpi = 300, width = 6, height = 3.5)
+
+#ggsave("C:/Users/mwuen//Documents/R/Misc/Figure.2.png", Figure.2, units = "in", dpi = 300, width = 6, height = 3.5)
+
+```
