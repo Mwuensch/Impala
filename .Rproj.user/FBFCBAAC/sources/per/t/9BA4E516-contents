@@ -13,6 +13,8 @@ library(dplyr)
 
 # Bring in datatframe
 imp.dat.17 <- read.csv("C:/Users/mwuen/Documents/R/Misc/Impala/impala.data.17.csv")
+imp.dat.17 <-  read.csv("~/Desktop/KSU_Research/South Africa/Impala/impala.data.17.csv")
+
 
 # Convert to factor
 imp.dat.17$location <- as.factor(imp.dat.17$location)
@@ -50,6 +52,7 @@ library(dplyr)
 
 # Bring in datatframe
 imp.dat.23 <- read.csv("C:/Users/mwuen/Documents/R/Misc/Impala/impala.data.23.csv")
+imp.dat.23 <-  read.csv("~/Desktop/KSU_Research/South Africa/Impala/impala.data.23.csv")
 
 # Convert to factor
 imp.dat.23$location <- as.factor(imp.dat.23$location)
@@ -139,13 +142,9 @@ chisq.test(imp.23.male.sum[c(1,2),c(4:6)], correct = FALSE)
 
 ##### Q3 Impala behavior between kruger NP and WRF #####
 
-# Filter for bachelor herd
-imp.23.bach.sum <- imp.dat.23.sum %>%
-  filter(herd.type == "bachelor")
 
 # Remove juveniles from imp.ter.sum since they're not in kruger
 imp.23.ter.sum.2 <- imp.23.ter.sum[-4,]
-
 
 
 # 2023 Territorial code, Q3
@@ -175,6 +174,46 @@ library(tidyr)
 # Notes for Taylor: I haven't made a 2017 figure yet (we only have data from WRF in territorial herds there). It'll be easy to adapt the 2023 code. I'm also not remotely married to any of these color palettes so change whatever the hell you want. I also did colors by behavior type, if you think it makes more sense to color impala type, herd type, etc differently, that works too! I also don't think I have the fonts set to print nicely at a given size since I made these REALLY fast for Ellie. Note to self, check orders of x axes.
 
 ##### 2017 Figures (Need done following code for 2023) #####
+imp.dat.17.sum
+
+## Territorial herds (only have WRF data from this year, all on territorial herds)
+# Need to convert everything to long format
+imp.ter.17.long <- imp.dat.17.sum %>%
+  pivot_longer(
+    cols = c("foraging", "vigilant", "all.other"),
+    names_to = "Behavior",
+    values_to = "Count"
+  )
+
+# Need to get total observations for each group to convert counts to proportions
+imp.ter.17.long <- imp.ter.17.long %>%
+   group_by(location, impala.type) %>%
+  mutate(sum = sum(Count))
+
+# Making a proportion column
+imp.ter.17.long$prop <- imp.ter.17.long$Count/imp.ter.17.long$sum
+
+#Reorder and rename behavior levels
+imp.ter.17.long$Behavior<-factor(imp.ter.17.long$Behavior, levels=c("foraging", "vigilant", "all.other"), labels= c("Foraging", "Vigilance", "Other"))
+
+# Setting theme for plots that I like
+theme <- theme_classic()+
+  theme(axis.title = element_text(size = 12), text = element_text(size = 10), axis.text=element_text(size=10, color = "black"), legend.title=element_text(size=10), legend.text=element_text(size=10), legend.position="right", axis.title.x = element_blank())
+
+
+
+# Making plot for territorial herds
+Figure.1 <- ggplot(data = imp.ter.17.long, aes(y = prop, x= interaction(impala.type, location), fill = Behavior)) + 
+  geom_bar(position = "dodge", stat = "identity", alpha = .85) + 
+  theme +
+    scale_fill_manual(values = c("#488650", "#4C0C0B", "#A0A0A0"))+
+  ylab("Proportion of time") +
+theme(axis.title.x = element_text(size=12))+
+xlab("Impala type & location") +
+scale_x_discrete(limits= c( "female.wits.facility", "male.wits.facility", "juvenile.wits.facility"), labels=c("Female.WRF", "Male.WRF", "Juvenile.WRF"))
+Figure.1
+
+
 
 
 
@@ -197,18 +236,21 @@ imp.23.ter.long <- imp.23.ter.long %>%
 # Making a proportion column
 imp.23.ter.long$prop <- imp.23.ter.long$Count/imp.23.ter.long$sum
 
-# Setting theme for plots that I like
-theme <- theme_classic()+
-  theme(axis.title = element_text(size = 8), text = element_text(size = 8), axis.text=element_text(size=8, color = "black"), legend.box.background = element_rect(colour = "black"), axis.title.x = element_blank())
+#Reorder and rename behavior levels
+imp.23.ter.long$Behavior<-factor(imp.23.ter.long$Behavior, levels=c("foraging", "vigilant", "all.other"), labels= c("Foraging", "Vigilance", "Other"))
+
+
 
 # Making plot for territorial herds
-Figure.1 <- ggplot(data = imp.23.ter.long, aes(y = prop, x= interaction(impala.type, location), fill = Behavior)) + 
+Figure.2 <- ggplot(data = imp.23.ter.long, aes(y = prop, x= interaction(impala.type, location), fill = Behavior)) + 
   geom_bar(position = "dodge", stat = "identity", alpha = .85) + 
   theme +
-  scale_fill_manual(values = c("#8C86A0", "#D5AB85", "#C0532B"))+
+    scale_fill_manual(values = c("#488650", "#4C0C0B", "#A0A0A0"))+
   labs(y = "Proportion of time") +
-  scale_x_discrete(labels=c("Female.KNP", "Male.KNP", "Female.WRF", "Juvenile.WRF", "Male.WRF"))
-
+theme(axis.title.x = element_text(size=12))+
+xlab("Impala type & location") +
+  scale_x_discrete(limits= c( "female.wits.facility", "male.wits.facility", "juvenile.wits.facility", "female.kruger", "male.kruger"), labels=c("Female.WRF", "Male.WRF", "Juvenile.WRF", "Female.KNP", "Male.KNP"))
+Figure.2
 
 
 ## Bachelor herds
@@ -228,16 +270,34 @@ imp.23.male.long <- imp.23.male.long %>%
 # Making a proportion column
 imp.23.male.long$prop <- imp.23.male.long$Count/imp.23.male.long$sum
 
+#Reoder and relavle behavior levels
+imp.23.male.long$Behavior<-factor(imp.23.male.long$Behavior, levels=c("foraging", "vigilant", "all.other"), labels= c("Foraging", "Vigilance", "Other"))
+
 # Making figure for males in territorial and bachelor herds
-Figure.2 <- ggplot(data = imp.23.male.long, aes(y = prop, x= interaction(herd.type, location), fill = Behavior)) +
+Figure.3 <- ggplot(data = imp.23.male.long, aes(y = prop, x= interaction(herd.type, location), fill = Behavior)) +
   geom_bar(position = "dodge", stat = "identity", alpha = .85) + 
   theme +
-  scale_fill_manual(values = c("#8C86A0", "#D5AB85", "#C0532B"))+
+    scale_fill_manual(values = c("#488650", "#4C0C0B", "#A0A0A0"))+
+    #scale_fill_manual(values = c("#365977", "#C0772B", "#A0A0A0"))+
+  #scale_fill_manual(values = c("#C0532B", "#D5AB85", "#8C86A0"))+
   labs(y = "Proportion of time") + 
-  scale_x_discrete(labels = c("Bachelor.KNP", "Territorial.KNP", "Bachelor.WRF", "Territorial.WRF"))
+  theme(axis.title.x = element_text(size=12))+
+xlab("Herd type & location") +
+  scale_x_discrete(limits= c("territorial.wits.facility",  "bachelor.wits.facility", "territorial.kruger", "bachelor.kruger"), labels = c(  "Territorial.WRF","Bachelor.WRF", "Territorial.KNP","Bachelor.KNP"))
+Figure.3
 
 #ggsave("C:/Users/mwuen//Documents/R/Misc/Figure.1.png", Figure.1, units = "in", dpi = 300, width = 6, height = 3.5)
 
 #ggsave("C:/Users/mwuen//Documents/R/Misc/Figure.2.png", Figure.2, units = "in", dpi = 300, width = 6, height = 3.5)
+
+#ggsave("C:/Users/mwuen//Documents/R/Misc/Figure.3.png", Figure.3, units = "in", dpi = 300, width = 6, height = 3.5)
+
+library(patchwork)
+patchworkImpala=Figure.1+Figure.2+Figure.3 + plot_layout(ncol=1, nrow=3)
+patchworkImpala+ 
+    plot_annotation(tag_levels = 'A') &
+    theme(plot.tag = element_text(size = 12, face="bold"))
+#ggsave("C:/Users/mwuen//Documents/R/Misc/CombinedFigure.png", units=c("in"), width=6.5, height=8)
+
 
 ```

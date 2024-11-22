@@ -209,7 +209,7 @@ Figure.1 <- ggplot(data = imp.ter.17.long, aes(y = prop, x= interaction(impala.t
     scale_fill_manual(values = c("#488650", "#4C0C0B", "#A0A0A0"))+
   ylab("Proportion of time") +
 theme(axis.title.x = element_text(size=12))+
-xlab("Impala type") +
+xlab("Impala type & location") +
 scale_x_discrete(limits= c( "female.wits.facility", "male.wits.facility", "juvenile.wits.facility"), labels=c("Female.WRF", "Male.WRF", "Juvenile.WRF"))
 Figure.1
 
@@ -248,7 +248,7 @@ Figure.2 <- ggplot(data = imp.23.ter.long, aes(y = prop, x= interaction(impala.t
     scale_fill_manual(values = c("#488650", "#4C0C0B", "#A0A0A0"))+
   labs(y = "Proportion of time") +
 theme(axis.title.x = element_text(size=12))+
-xlab("Impala type / Location") +
+xlab("Impala type & location") +
   scale_x_discrete(limits= c( "female.wits.facility", "male.wits.facility", "juvenile.wits.facility", "female.kruger", "male.kruger"), labels=c("Female.WRF", "Male.WRF", "Juvenile.WRF", "Female.KNP", "Male.KNP"))
 Figure.2
 
@@ -282,7 +282,7 @@ Figure.3 <- ggplot(data = imp.23.male.long, aes(y = prop, x= interaction(herd.ty
   #scale_fill_manual(values = c("#C0532B", "#D5AB85", "#8C86A0"))+
   labs(y = "Proportion of time") + 
   theme(axis.title.x = element_text(size=12))+
-xlab("Herd type / Location") +
+xlab("Herd type & location") +
   scale_x_discrete(limits= c("territorial.wits.facility",  "bachelor.wits.facility", "territorial.kruger", "bachelor.kruger"), labels = c(  "Territorial.WRF","Bachelor.WRF", "Territorial.KNP","Bachelor.KNP"))
 Figure.3
 
