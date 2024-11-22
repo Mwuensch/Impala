@@ -286,11 +286,11 @@ xlab("Herd type & location") +
   scale_x_discrete(limits= c("territorial.wits.facility",  "bachelor.wits.facility", "territorial.kruger", "bachelor.kruger"), labels = c(  "Territorial.WRF","Bachelor.WRF", "Territorial.KNP","Bachelor.KNP"))
 Figure.3
 
-#ggsave("C:/Users/mwuen//Documents/R/Misc/Figure.1.png", Figure.1, units = "in", dpi = 300, width = 6, height = 3.5)
+#ggsave("C:/Users/mwuen//Documents/R/Misc/Figure.1.png", Figure.1, units = "in", dpi = 300, width = 6.5, height = 3.5)
 
-#ggsave("C:/Users/mwuen//Documents/R/Misc/Figure.2.png", Figure.2, units = "in", dpi = 300, width = 6, height = 3.5)
+#ggsave("C:/Users/mwuen//Documents/R/Misc/Figure.2.png", Figure.2, units = "in", dpi = 300, width = 6.5, height = 3.5)
 
-#ggsave("C:/Users/mwuen//Documents/R/Misc/Figure.3.png", Figure.3, units = "in", dpi = 300, width = 6, height = 3.5)
+#ggsave("C:/Users/mwuen//Documents/R/Misc/Figure.3.png", Figure.3, units = "in", dpi = 300, width = 6.5, height = 3.5)
 
 library(patchwork)
 patchworkImpala=Figure.1+Figure.2+Figure.3 + plot_layout(ncol=1, nrow=3)
