@@ -1,0 +1,166 @@
+---
+title: "Impala.aje.revised"
+author: "Matt Wuensch"
+date: "2025-04-22"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+set.seed(63)
+library(dplyr)
+library(lme4)
+library(lmerTest)
+library(emmeans)
+
+# Analyses for 2017, comparing differences in foraging and vigilance for males, females, and juveniles in territorial herds in WRF
+
+# Bring in 2017 data
+imp.17 <- read.csv("2017_individual.csv")
+
+# Making new column of non-foraging and non-vigilance. needed for binomial regressions wherein we have success/failure format meaning success = targeted behavior and failure = not-targeted behavior.
+imp.17$non.forage <- imp.17$vigilant + imp.17$other
+imp.17$non.vigilant <- imp.17$foraging + imp.17$other
+
+# Binomial regressions examining foraging/non-foraging in response to impala status within territorial herds.
+
+################
+##### NOTE #####
+################   # we need to decide if these models will include a random effect or not 
+
+# foraging model
+bnom17.for <- glmer(cbind(foraging,non.forage) ~ status + (1|sequence), data = imp.17, family = binomial())
+
+# Model summary
+summary(bnom17.for)
+
+# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 if ranef, type 2 if not
+car::Anova(bnom17.for, type = 3) 
+
+# Using emmeans to assess pairwise comparisons via tukey posthoc test
+emm.for.17 <- emmeans(bnom17.for,pairwise ~ status, type = "response") # We'll use this object for creating figures
+
+
+
+# Vigilance model
+bnom17.vig <- glmer(cbind(vigilant,non.vigilant) ~ status + (1|sequence), data = imp.17, family = binomial())
+
+# Model summary
+summary(bnom17.vig)
+
+# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 2 if ranef, type 2 if not
+car::Anova(bnom17.vig, type = 3)
+
+# Using emmeans to assess pairwise comparisons via tukey posthoc test
+emm.vig.17 <- emmeans(bnom17.vig,pairwise ~ status, type = "response")
+
+
+
+
+# Analyses for 2023, comparing differences in foraging and vigilance for males, females, and juveniles in territorial herds in WRF and KNP (and differences between 2 locations). Additionally will compare foraging and vigilance between males in territorial and bachelor herds in WRF and KNP (and differences between 2 locations)
+imp.23 <- read.csv("2023_individual.csv")
+
+# Making new column of non-foraging and non-vigilance. needed for binomial regressions wherein we have success/failure format meaning success = targeted behavior and failure = not-targeted behavior.
+imp.23$non.forage <- imp.23$vigilant + imp.23$other
+imp.23$non.vigilant <- imp.23$foraging + imp.23$other
+
+
+# Summarise by each of the groups.
+sum23 <- imp.23 %>%
+  group_by(location, status) %>%
+  summarise(sum(total))
+
+# Juveniles sample size is very low in KNP, they'll need removed from analyses
+imp.23 <- imp.23 %>%
+  filter(!(location == "KNP" & status == "juvenile"))
+
+# Subset territorial data for modelling differences in behavior among individuals in territorial herds in WRF and KNP.
+imp.23.ter <- imp.23 %>%
+  filter(herd.type == "territorial") %>%
+  droplevels()
+
+# Binomial regression model examining foraging in territorial herds. REMINDER TO THINK ABOUT RANDOM EFFECTS!!!
+bnom23.ter.for <- glmer(cbind(foraging,non.forage) ~ location*status + (1|sequence), data = imp.23.ter, family = binomial())
+
+# Model summary
+summary(bnom23.ter.for)
+
+# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions
+car::Anova(bnom23.ter.for, type = 3) 
+
+# Using emmeans to gather probabilities and SE for each group. Will use for plotting
+em.bn23.ter.for <- emmeans(bnom23.ter.for,  ~ location * status, type = "response")
+
+# Contrasts for pairwise comparisons via Tukey tests
+contrast(em.bn23.ter.for, method = "pairwise", by = "location")
+contrast(em.bn23.ter.for, method = "pairwise", by = "status")
+
+
+
+# Binomial regression model examining vigilance in territorial herds. 
+bnom23.ter.vig <- glmer(cbind(vigilant,non.vigilant) ~ location*status + (1|sequence), data = imp.23.ter, family = binomial())
+
+# Model summary
+summary(bnom23.ter.vig)
+
+# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions
+car::Anova(bnom23.ter.vig, type = 3)
+
+# Making emmeans object for plotting and reporting
+em.bn23.ter.vig <- emmeans(bnom23.ter.vig,  ~ location * status, type = "response")
+
+# Contrasts for pairwise comparisons
+contrast(em.bn23.ter.vig, method = "pairwise", by = "location")
+contrast(em.bn23.ter.vig, method = "pairwise", by = "status")
+
+
+
+# Compare foraging and vigilance between males in territorial and bachelor herds in WRF and KNP (and differences between 2 locations)
+# Subset data for males 
+imp.23.m <- imp.23 %>%
+  filter(status == "b.male" | status == "t.male") %>%
+  droplevels()
+
+# Binomial regression
+bnom23.bac.for <- glmer(cbind(foraging,non.forage) ~ location*status + (1|sequence), data = imp.23.m, family = binomial())
+
+# Model summary
+summary(bnom23.bac.for)
+
+# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions
+car::Anova(bnom23.bac.for, type = 3) 
+
+# Making emmeans object
+em.bn23.bac.for <- emmeans(bnom23.bac.for,  ~ location * status, type = "response")
+
+# Contrasts for pairwise comparisons
+contrast(em.bn23.bac.for, method = "pairwise", by = "location")
+contrast(em.bn23.bac.for, method = "pairwise", by = "status")
+
+
+
+# Vigilance model
+bnom23.bac.vig <- glmer(cbind(vigilant,non.vigilant) ~ location*status + (1|sequence), data = imp.23.m, family = binomial())
+
+# Model summary
+summary(bnom23.bac.vig)
+
+# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions
+car::Anova(bnom23.bac.vig, type = 3) 
+
+# Making emmeans object for plotting and reporting
+em.bn23.bac.vig <- emmeans(bnom23.bac.vig,  ~ location * status, type = "response")
+
+# Contrasts for pairwise comparisons
+contrast(em.bn23.bac.vig, method = "pairwise", by = "location")
+contrast(em.bn23.bac.vig, method = "pairwise", by = "status")
+
+
+
+
+### To do: decide if we want random effects or not
+###        Build plots
+
+
+```
