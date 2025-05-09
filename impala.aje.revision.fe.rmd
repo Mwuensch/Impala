@@ -1,7 +1,7 @@
 ---
-title: "Impala.aje.revised"
+title: "impala.revision.noran"
 author: "Matt Wuensch"
-date: "2025-04-22"
+date: "2025-05-07"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -31,13 +31,13 @@ imp.17$non.vigilant <- imp.17$foraging + imp.17$other
 ################   # we need to decide if these models will include a random effect or not 
 
 # foraging model
-bnom17.for <- glmer(cbind(foraging,non.forage) ~ status + (1|sequence), data = imp.17, family = binomial())
+bnom17.for <- glm(cbind(foraging,non.forage) ~ status, data = imp.17, family = binomial())
 
 # Model summary
 summary(bnom17.for)
 
 # Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 if ranef, type 2 if not
-car::Anova(bnom17.for, type = 3) 
+car::Anova(bnom17.for, type = 2) 
 
 # Using emmeans to assess pairwise comparisons via tukey posthoc test
 emm.for.17 <- emmeans(bnom17.for,pairwise ~ status, type = "response") # We'll use this object for creating figures
@@ -45,7 +45,7 @@ emm.for.17 <- emmeans(bnom17.for,pairwise ~ status, type = "response") # We'll u
 
 
 # Vigilance model
-bnom17.vig <- glmer(cbind(vigilant,non.vigilant) ~ status + (1|sequence), data = imp.17, family = binomial())
+bnom17.vig <- glm(cbind(vigilant,non.vigilant) ~ status, data = imp.17, family = binomial())
 
 # Model summary
 summary(bnom17.vig)
@@ -65,8 +65,12 @@ imp.23 <- read.csv("2023_individual.csv")
 # Making new column of non-foraging and non-vigilance. needed for binomial regressions wherein we have success/failure format meaning success = targeted behavior and failure = not-targeted behavior.
 imp.23$non.forage <- imp.23$vigilant + imp.23$other
 imp.23$non.vigilant <- imp.23$foraging + imp.23$other
-imp.23$sequence <- as.character(imp.23$sequence)
 
+
+# Summarise by each of the groups.
+sum23 <- imp.23 %>%
+  group_by(location, status) %>%
+  summarise(sum(total))
 
 # Summarise by each of the groups.
 sum23 <- imp.23 %>%
@@ -83,13 +87,13 @@ imp.23.ter <- imp.23 %>%
   droplevels()
 
 # Binomial regression model examining foraging in territorial herds.
-bnom23.ter.for <- glmer(cbind(foraging,non.forage) ~ location*status + (1|sequence), data = imp.23.ter, family = binomial())
+bnom23.ter.for <- glm(cbind(foraging,non.forage) ~ location*status, data = imp.23.ter, family = binomial())
 
 # Model summary
 summary(bnom23.ter.for)
 
 # Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions
-car::Anova(bnom23.ter.for, type = 3) 
+car::Anova(bnom23.ter.for, type = 2) 
 
 # Using emmeans to gather probabilities and SE for each group. Will use for plotting
 em.bn23.ter.for <- emmeans(bnom23.ter.for,  ~ location * status, type = "response")
@@ -101,13 +105,13 @@ contrast(em.bn23.ter.for, method = "pairwise", by = "status")
 
 
 # Binomial regression model examining vigilance in territorial herds. 
-bnom23.ter.vig <- glmer(cbind(vigilant,non.vigilant) ~ location*status + (1|sequence), data = imp.23.ter, family = binomial())
+bnom23.ter.vig <- glm(cbind(vigilant,non.vigilant) ~ location*status, data = imp.23.ter, family = binomial())
 
 # Model summary
 summary(bnom23.ter.vig)
 
 # Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions
-car::Anova(bnom23.ter.vig, type = 3)
+car::Anova(bnom23.ter.vig, type = 2)
 
 # Making emmeans object for plotting and reporting
 em.bn23.ter.vig <- emmeans(bnom23.ter.vig,  ~ location * status, type = "response")
@@ -125,13 +129,13 @@ imp.23.m <- imp.23 %>%
   droplevels()
 
 # Binomial regression
-bnom23.bac.for <- glmer(cbind(foraging,non.forage) ~ location*status + (1|sequence), data = imp.23.m, family = binomial())
+bnom23.bac.for <- glm(cbind(foraging,non.forage) ~ location*status, data = imp.23.m, family = binomial())
 
 # Model summary
 summary(bnom23.bac.for)
 
 # Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions
-car::Anova(bnom23.bac.for, type = 3) 
+car::Anova(bnom23.bac.for, type = 2) 
 
 # Making emmeans object
 em.bn23.bac.for <- emmeans(bnom23.bac.for,  ~ location * status, type = "response")
@@ -143,13 +147,13 @@ contrast(em.bn23.bac.for, method = "pairwise", by = "status")
 
 
 # Vigilance model
-bnom23.bac.vig <- glmer(cbind(vigilant,non.vigilant) ~ location*status + (1|sequence), data = imp.23.m, family = binomial())
+bnom23.bac.vig <- glm(cbind(vigilant,non.vigilant) ~ location*status, data = imp.23.m, family = binomial())
 
 # Model summary
 summary(bnom23.bac.vig)
 
 # Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions
-car::Anova(bnom23.bac.vig, type = 3) 
+car::Anova(bnom23.bac.vig, type = 2) 
 
 # Making emmeans object for plotting and reporting
 em.bn23.bac.vig <- emmeans(bnom23.bac.vig,  ~ location * status, type = "response")
@@ -164,8 +168,6 @@ contrast(em.bn23.bac.vig, method = "pairwise", by = "status")
 library(ggplot2)
 library(patchwork)
 library(ggpattern)
-library(performance)
-library(MuMIn)
 # Reminder of emmeans summary names
 emm.for.17 # 2017 foraging model territorial herds wits
 emm.vig.17 # 2017 vigilance model territorial herds wits
@@ -218,7 +220,7 @@ scale_x_discrete(limits= c( "female", "t.male", "juvenile"), labels=c("Female", 
 
 # Combining the 2 plots
 plot.17 <- (foraging.17.plot | vigilance.17.plot) + plot_layout(guides = "collect")
-ggsave("plot.17.png", plot.17, width = 10, height = 6, dpi = 500)
+ggsave("plot.17.fe.png", plot.17, width = 10, height = 6, dpi = 500)
 
 
 
@@ -256,7 +258,7 @@ scale_x_discrete(limits= c("female.WRF", "t.male.WRF", "juvenile.WRF", "female.K
                                  
 # Combining the 2 plots
 terr.plot.23 <- (foraging.23.ter.plot | vigilance.23.ter.plot) + plot_layout(guides = "collect")
-ggsave("terr.plot.23.png", terr.plot.23, width = 10, height = 6, dpi = 500)
+ggsave("terr.plot.23.fe.png", terr.plot.23, width = 10, height = 6, dpi = 500)
 
 
 # Male comparisons in WRF and KNP
@@ -289,6 +291,6 @@ scale_x_discrete(limits= c("t.male.WRF", "b.male.WRF", "t.male.KNP", "b.male.KNP
 
 # Combining the 2 plots
 male.plot.23 <- (foraging.23.male.plot | vigilance.23.male.plot) + plot_layout(guides = "collect")
-ggsave("male.plot.23.png", male.plot.23, width = 10, height = 6, dpi = 500)
+ggsave("male.plot.23.fe.png", male.plot.23, width = 10, height = 6, dpi = 500)
 
 ```
