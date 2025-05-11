@@ -26,17 +26,13 @@ imp.17$non.vigilant <- imp.17$foraging + imp.17$other
 
 # Binomial regressions examining foraging/non-foraging in response to impala status within territorial herds.
 
-################
-##### NOTE #####
-################   # we need to decide if these models will include a random effect or not 
-
 # foraging model
 bnom17.for <- glmer(cbind(foraging,non.forage) ~ status + (1|sequence), data = imp.17, family = binomial())
 
 # Model summary
 summary(bnom17.for)
 
-# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 if ranef, type 2 if not
+# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 for ranef
 car::Anova(bnom17.for, type = 3) 
 
 # Using emmeans to assess pairwise comparisons via tukey posthoc test
@@ -50,7 +46,7 @@ bnom17.vig <- glmer(cbind(vigilant,non.vigilant) ~ status + (1|sequence), data =
 # Model summary
 summary(bnom17.vig)
 
-# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 2 if ranef, type 2 if not
+# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 for ranef
 car::Anova(bnom17.vig, type = 3)
 
 # Using emmeans to assess pairwise comparisons via tukey posthoc test
@@ -88,7 +84,7 @@ bnom23.ter.for <- glmer(cbind(foraging,non.forage) ~ location*status + (1|sequen
 # Model summary
 summary(bnom23.ter.for)
 
-# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions
+# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions and raneff
 car::Anova(bnom23.ter.for, type = 3) 
 
 # Using emmeans to gather probabilities and SE for each group. Will use for plotting
@@ -106,7 +102,7 @@ bnom23.ter.vig <- glmer(cbind(vigilant,non.vigilant) ~ location*status + (1|sequ
 # Model summary
 summary(bnom23.ter.vig)
 
-# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions
+# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions and raneff
 car::Anova(bnom23.ter.vig, type = 3)
 
 # Making emmeans object for plotting and reporting
@@ -130,7 +126,7 @@ bnom23.bac.for <- glmer(cbind(foraging,non.forage) ~ location*status + (1|sequen
 # Model summary
 summary(bnom23.bac.for)
 
-# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions
+# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions and raneff
 car::Anova(bnom23.bac.for, type = 3) 
 
 # Making emmeans object
@@ -148,7 +144,7 @@ bnom23.bac.vig <- glmer(cbind(vigilant,non.vigilant) ~ location*status + (1|sequ
 # Model summary
 summary(bnom23.bac.vig)
 
-# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions
+# Using car Anova for Wald chisquare test to see if estimates significantly differ from 0. Type 3 due to presence of interactions and raneff
 car::Anova(bnom23.bac.vig, type = 3) 
 
 # Making emmeans object for plotting and reporting
@@ -164,8 +160,6 @@ contrast(em.bn23.bac.vig, method = "pairwise", by = "status")
 library(ggplot2)
 library(patchwork)
 library(ggpattern)
-library(performance)
-library(MuMIn)
 # Reminder of emmeans summary names
 emm.for.17 # 2017 foraging model territorial herds wits
 emm.vig.17 # 2017 vigilance model territorial herds wits
